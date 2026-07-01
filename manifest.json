@@ -1,0 +1,31 @@
+{
+  "name": "Pantau Iklim Desa - Early Warning",
+  "short_name": "Iklim Desa",
+  "description": "Sistem pemantauan iklim desa berbasis satelit untuk mendukung ketahanan pangan dan mitigasi kekeringan.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./screenshot.jpg",
+      "sizes": "1916x1070",
+      "type": "image/jpeg",
+      "form_factor": "wide"
+    }
+  ]
+}
