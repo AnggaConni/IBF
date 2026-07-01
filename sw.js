@@ -1,6 +1,8 @@
-const CACHE_NAME = 'destana-iklim-v1';
+// Ubah versi cache (misal v2) setiap kali Anda melakukan perombakan besar
+// agar browser membuang cache lama dan mengambil yang baru
+const CACHE_NAME = 'destana-iklim-v2';
 
-// Daftar file lokal yang wajib di-cache saat pertama kali install
+// Daftar file awal yang wajib disimpan saat pertama kali diinstal
 const urlsToCache = [
     './',
     './index.html',
@@ -11,24 +13,25 @@ const urlsToCache = [
     './screenshot.jpg'
 ];
 
-// Install Service Worker
+// 1. Pendaftaran / Install Service Worker
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('Opened cache');
+                console.log('Cache berhasil dibuka');
                 return cache.addAll(urlsToCache);
             })
     );
-    self.skipWaiting();
+    self.skipWaiting(); // Memaksa SW baru segera aktif
 });
 
-// Activate dan bersihkan cache lama
+// 2. Aktivasi & Pembersihan Cache Lama
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
+                    // Hapus cache versi lama (v1) jika ada
                     if (cacheName !== CACHE_NAME) {
                         return caches.delete(cacheName);
                     }
@@ -36,47 +39,41 @@ self.addEventListener('activate', (event) => {
             );
         })
     );
-    self.clients.claim();
+    self.clients.claim(); // Memastikan SW langsung mengambil alih halaman
 });
 
-// Strategi Intercept Fetch Request
+// 3. Strategi: NETWORK FIRST, FALLBACK TO CACHE
 self.addEventListener('fetch', (event) => {
-    const url = new URL(event.request.url);
+    // Kita hanya meng-cache request dengan metode GET (jangan cache POST/PUT)
+    if (event.request.method !== 'GET') return;
 
-    // 1. Strategi "Network First" untuk API Cuaca Open-Meteo
-    // Selalu coba ambil data cuaca terbaru, jika offline, gunakan data cache terakhir
-    if (url.hostname.includes('api.open-meteo.com')) {
-        event.respondWith(
-            fetch(event.request)
-                .then((response) => {
-                    const clonedResponse = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, clonedResponse);
-                    });
-                    return response;
-                })
-                .catch(() => caches.match(event.request))
-        );
-        return;
-    }
-
-    // 2. Strategi "Stale-While-Revalidate" untuk file lain (HTML, CDN Tailwind, Leaflet, FontAwesome)
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            const fetchPromise = fetch(event.request).then((networkResponse) => {
-                // Simpan ke cache untuk penggunaan berikutnya
+        // LANGKAH 1: Selalu coba ambil dari Internet (Network First)
+        fetch(event.request)
+            .then((networkResponse) => {
+                // Jika berhasil, kloning respon tersebut untuk disimpan ke dalam Cache
+                // agar kita selalu punya salinan paling baru (Last Connection)
                 if (networkResponse && networkResponse.status === 200 && networkResponse.type !== 'opaque') {
+                    const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, networkResponse.clone());
+                        cache.put(event.request, responseToCache);
                     });
                 }
+                
+                // Berikan data terbaru langsung ke aplikasi
                 return networkResponse;
-            }).catch(() => {
-                // Biarkan jika gagal fetch (offline)
-            });
-
-            // Return cache langsung jika ada, sambari background fetch memperbarui cache
-            return cachedResponse || fetchPromise;
-        })
+            })
+            .catch(() => {
+                // LANGKAH 2: Jika gagal (karena Offline/Tidak ada sinyal)
+                // Coba cari data tersebut di dalam Cache (Secondary Offline Use)
+                return caches.match(event.request).then((cachedResponse) => {
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    
+                    // (Opsional) Jika tidak ada di cache sama sekali dan offline,
+                    // Anda bisa mengembalikan halaman offline custom di sini jika mau
+                });
+            })
     );
 });
