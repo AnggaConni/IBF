@@ -2,7 +2,7 @@
   "name": "Pantau Iklim Desa - Early Warning",
   "short_name": "Iklim Desa",
   "description": "Sistem pemantauan iklim desa berbasis satelit untuk mendukung ketahanan pangan dan mitigasi kekeringan.",
-  "start_url": "./index.html",
+  "start_url": "https://anggaconni.github.io/IBF/index.html",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#0f172a",
@@ -27,5 +27,12 @@
       "type": "image/jpeg",
       "form_factor": "wide"
     }
+  ],
+  "id": "id.anggasaputra.pantaudesa.twa",
+  "dir": "ltr",
+  "categories": [
+    "development",
+    "education",
+    "productivity"
   ]
 }
